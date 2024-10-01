@@ -1,0 +1,24 @@
+name: Close PR if not created by issue creator
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  close-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Close PR if not created by issue creator
+        uses: github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.get({ issue_number: github.context.pullRequest.number, repo: github.context.repo.owner, owner: github.context.repo.repo })
+              .then(issue => {
+                if (issue.data.user.login !== github.context.pullRequest.user.login) {
+                  github.pulls.update({ pull_number: github.context.pullRequest.number, repo: github.context.repo.owner, owner: github.context.repo.repo, state: 'closed' })
+                }
+              })
